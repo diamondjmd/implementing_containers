@@ -1,9 +1,10 @@
+#include <iostream>
 #include "Vector.hpp"
 
 int main(){
     // 1. creating a container object to store objects of type int
     // 2. adding ten elements to the container (0, 1 ... 9)
-    cntr::Vector<int> vec {0,1,2,3,4,5,6,7,8,9};
+    container::Vector<int> vec {0,1,2,3,4,5,6,7,8,9};
 
     // 3. displaying the contents of the container on the screen
         // expected result: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -49,9 +50,9 @@ int main(){
     for (auto iter = vec.begin(); iter != vec.end(); ++iter) {
         std::cout << *iter << std::endl;
     }
-
+    
     auto vec2 = std::move(vec);
-    vec2.print("vec2");
+    std::cout << vec2.toString("vec2");
 
     return 0;
 }

@@ -1,22 +1,20 @@
 #pragma once
 
-#include <iostream>
 #include <stdexcept>
 #include <initializer_list>
+#include <sstream>
 
-namespace cntr { //contr (container)
+namespace container {
 
 	template <typename T>
 	class List {
 			// Node of the list
 			struct Node{
-				Node() 
+				Node()
 					:value{T{}}, next{nullptr}, prev{nullptr} {};
-				Node(const T &val, Node* next_ , Node* prev_) 
+				Node(const T &val, Node* next_ , Node* prev_)
 					:value{val}, next{next_}, prev{prev_} {}
-				Node(T && value_, Node *next_ = nullptr, Node *prev_ = nullptr) noexcept
-					:value{std::move(value_)}, next{next_}, prev{prev_} {}
-				
+
 				T value{};
 				Node *next;
 				Node *prev;
@@ -25,19 +23,20 @@ namespace cntr { //contr (container)
 		public:
 
 			// Constructors, destructor, assignment operators
-			List(); 
+			List();
 			List(const List &list); //copy constructor
 			List(List && list) noexcept; // move constructor
 			List(const std::initializer_list<T> &elements); //initializer list constructor
-			virtual ~List() noexcept;
-			
-			List<T> &operator=(const List &list);
+			virtual ~List();
+
+			// List<T> &operator=(const List &list);
+			List<T> &operator=(const List &list); // implements copy swap idiom
 			List<T> &operator=(List &&list) noexcept;
-			
+
 			// Element access
 			T &operator[](const std::size_t index);
 			const T &operator[](const std::size_t index) const;
-			
+
 			// Inner classes
 			class const_iterator;
 			class iterator;
@@ -53,8 +52,9 @@ namespace cntr { //contr (container)
 			// Capacity
 			bool empty() const;
 			std::size_t size()const;
-			
+
 			// Modifiers
+			void clear();
 			iterator insert(const_iterator it, const T &value);
 			iterator insert(const_iterator it, T &&value) noexcept;
 			void push_front(const T &value);
@@ -67,17 +67,18 @@ namespace cntr { //contr (container)
 			iterator erase(const std::size_t index);
 			void pop_front();
 			void pop_back();
-			void clear();
+			void swap(List<T> &list) noexcept;
+
 
 			//Operations
 			void reverse();
-			void print(const std::string &name = "") const;
+			std::string toString(const std::string &name = "") const;
 
 	private:
 			Node *head;
 			Node *tail;
 			std::size_t m_size{};
-			
+
 			// helper
 			Node *seek(const std::size_t index);
 	};
@@ -88,58 +89,43 @@ namespace cntr { //contr (container)
 	List<T>::List() :head{new Node{}}, tail{head}, m_size{} {}
 
 	template <typename T>
-	List<T>::List(const List<T> &list) :head{nullptr}, tail{head}, m_size{} {
-		*this = list;
+	List<T>::List(const List<T> &list) :List{} {
+		for (const auto &it : list) {
+			push_back(it);
+		}
 	}
 
 	template <typename T>
-	List<T>::List(List &&list) noexcept :head{nullptr}, tail{head}, m_size{} {
-		*this = std::move(list);
+	List<T>::List(List &&list) noexcept :List{} {
+		swap(list);
 	}
 
 	template <typename T>
-	List<T>::List(const std::initializer_list<T> &elements) :List<T>{} {
+	List<T>::List(const std::initializer_list<T> &elements) :List{} {
 		for (auto &element: elements)	{
 			push_back(element);
 		}
 	}
 
 	template <typename T>
-	List<T>::~List() noexcept{
+	List<T>::~List(){
 		clear();
 	}
 
-
 	template<typename T>
-	List<T>& List<T>::operator=(const List<T> &list) {
-		if (this == &list){
-			return *this;
-		}
-
-		clear();
-		head = tail = new Node{};
-		m_size = 0;
-		for (const auto& it: list){
-			push_back(it);
+	List<T>& List<T>::operator=(const List<T> &list){
+		if (this != &list){
+			auto temp{list};
+			swap(temp);
 		}
 		return *this;
 	}
 
 	template<typename T>
 	List<T>& List<T>::operator=(List<T> &&list) noexcept {
-		if (this == &list){
-			return *this;
+		if (this != &list){
+			swap(list);
 		}
-
-		clear();
-		head = list.head;
-		tail = list.tail;
-		m_size = list.m_size;
-
-		list.head = nullptr;
-		list.tail = nullptr;
-		list.m_size = 0;
-
 		return *this;
 	}
 
@@ -179,39 +165,39 @@ namespace cntr { //contr (container)
 
 	//-----------------  Iterators -----------------//
 	template<typename T>
-	typename List<T>::iterator List<T>::begin() noexcept { 
-		return iterator{head}; 
+	typename List<T>::iterator List<T>::begin() noexcept {
+		return iterator{head};
 	}
 
 	template<typename T>
-	typename List<T>::const_iterator List<T>::begin() const noexcept { 
-		return cbegin(); 
+	typename List<T>::const_iterator List<T>::begin() const noexcept {
+		return cbegin();
 	}
 
 	template<typename T>
-	typename List<T>::const_iterator List<T>::cbegin() const noexcept { 
-		return const_iterator{head}; 
+	typename List<T>::const_iterator List<T>::cbegin() const noexcept {
+		return const_iterator{head};
 	}
 
 	template<typename T>
-	typename List<T>::iterator List<T>::end() noexcept { 
-		return iterator{tail}; 
+	typename List<T>::iterator List<T>::end() noexcept {
+		return iterator{tail};
 	}
 
 	template<typename T>
-	typename List<T>::const_iterator List<T>::end() const noexcept{ 
-		return cend(); 
+	typename List<T>::const_iterator List<T>::end() const noexcept{
+		return cend();
 	}
 
 	template<typename T>
-	typename List<T>::const_iterator List<T>::cend() const noexcept{ 
+	typename List<T>::const_iterator List<T>::cend() const noexcept{
 		return const_iterator{tail};
 	}
-	
+
 	//-----------------  Capacity ------------------//
 	template<typename T>
-	std::size_t List<T>::size() const { 
-		return m_size; 
+	std::size_t List<T>::size() const {
+		return m_size;
 	}
 
 	template<typename T>
@@ -220,18 +206,31 @@ namespace cntr { //contr (container)
 	}
 
 	//-----------------  Modifiers -----------------//
+	template<typename T>
+	void List<T>::clear() {
+		if (!head) return;
+
+		while (head->next) {
+			head = head->next;
+			delete head->prev;
+		}
+		delete head;
+		head = tail = nullptr;
+		m_size = 0;
+	}
+
 	template <typename T>
 	typename List<T>::iterator List<T>::insert(const_iterator it, const T &value){
-		if (it == nullptr) {
+		if (it == nullptr && m_size) {
 			throw std::runtime_error("ERROR: Empty or null Iterator");
 		}
 
-		Node *current =  it.current_node;
+		Node *current = it.current_node;
 		Node *new_node = new Node(value, current, current->prev);
 		if (new_node->prev) {
-				new_node->prev->next = new_node; 
+				new_node->prev->next = new_node;
 		}
-		current->prev = new_node; 
+		current->prev = new_node;
 		m_size++;
 
 		return (new_node);
@@ -239,12 +238,12 @@ namespace cntr { //contr (container)
 
 	template <typename T>
 	typename List<T>::iterator List<T>::insert(const_iterator it, T &&value) noexcept {
-		Node *current =  it.current_node;
+		Node *current = it.current_node;
 		Node *new_node = new Node(std::move(value), current, current->prev);
 		if (new_node->prev) {
-				new_node->prev->next = new_node; 
+				new_node->prev->next = new_node;
 		}
-		current->prev = new_node; 
+		current->prev = new_node;
 		m_size++;
 		return iterator(new_node);
 	}
@@ -262,7 +261,7 @@ namespace cntr { //contr (container)
 	template <typename T>
 	void List<T>::push_mid(const T &value) {
 		if(!empty()){
-			insert (const_iterator(seek(m_size/2)), value); 
+			insert (const_iterator(seek(m_size/2)), value);
 		}else {
 			push_front(value);
 		}
@@ -271,7 +270,7 @@ namespace cntr { //contr (container)
 	template <typename T>
 	void List<T>::push_mid(T &&value) noexcept {
 		if(!empty()){
-			insert (const_iterator(seek(m_size/2)), std::move(value)); 
+			insert (const_iterator(seek(m_size/2)), std::move(value));
 		}else {
 			push_front(std::move(value));
 		}
@@ -280,7 +279,7 @@ namespace cntr { //contr (container)
 	template <typename T>
 	void List<T>::push_back(const T &value) {
 		if(!empty()){
-			insert (end(), value); 
+			insert (end(), value);
 		}else {
 			push_front(value);
 		}
@@ -289,7 +288,7 @@ namespace cntr { //contr (container)
 	template <typename T>
 	void List<T>::push_back(T &&value) noexcept {
 		if(!empty()){
-			insert (end(), std::move(value)); 
+			insert (end(), std::move(value));
 		}else {
 			push_front(std::move(value));
 		}
@@ -299,7 +298,6 @@ namespace cntr { //contr (container)
 	typename List<T>::iterator List<T>::erase(const_iterator it) {
 		Node *current = it.current_node;
 		iterator to_return{current};
-		
 		if (!head || !current){
 			return to_return;
 		}
@@ -327,7 +325,7 @@ namespace cntr { //contr (container)
 
 	template <typename T>
 	void List<T>::pop_front() {
-		if (empty()) { 
+		if (empty()) {
 			throw std::runtime_error("ERROR: Empty container");
 		}
 		erase(begin());
@@ -335,29 +333,23 @@ namespace cntr { //contr (container)
 
 	template <typename T>
 	void List<T>::pop_back() {
-		if (empty()) { 
+		if (empty()) {
 			throw std::runtime_error("ERROR: Empty container");
 		}
 		erase(end());
 	}
 
-	template<typename T>
-	void List<T>::clear() {
-		if (!head) return;
-
-		while (head->next) {
-			head = head->next;
-			delete head->prev;
-		}
-		delete head;
-		head = tail = nullptr;
-		m_size = 0;
+	template <typename T>
+	void List<T>::swap(List<T> &list) noexcept {
+		std::swap(head, list.head);
+		std::swap(tail, list.tail);
+		std::swap(m_size, list.m_size);
 	}
 
 	//-----------------  Operations -----------------//
 	template<typename T>
 	void List<T>::reverse(){
-		List<T> temp_list; 
+		List<T> temp_list;
 
 		for (const auto &it : *this){
 			temp_list.push_front(it);
@@ -367,14 +359,16 @@ namespace cntr { //contr (container)
 	}
 
 	template<typename T>
-	void List<T>::print(const std::string & name) const {
-		std::cout << "\n<===== List: " << name << " ======>\n >>Size:" << m_size;
+	std::string List<T>::toString(const std::string & name) const {
+		std::stringstream stream;
+		stream << "\n<===== List: " << name << " ======>\n >>Size:" << m_size;
 		std::size_t index = 0;
 		for (const auto &it : *this) {
-			std::cout << "\n [" << index << "]=> " << it ;
+			stream << "\n [" << index << "]=> " << it ;
 			index++;
 		}
-		std::cout << "\n<=== End " << name << " ====>\n";
+		stream << "\n<=== End " << name << " ====>\n";
+		return stream.str();
 	}
 
 	//---------------- Non-member functions ----------------//
@@ -389,11 +383,11 @@ namespace cntr { //contr (container)
 	}
 
 	//-------------- Inner class const_iterator --------//
-	template <typename T>	
+	template <typename T>
 	class List<T>::const_iterator {
 	public:
 		const_iterator();
-		
+
 		const T & operator*() const;
 		const_iterator & operator++(); // Prefix
 		const_iterator operator++(int);// Postfix
@@ -409,7 +403,7 @@ namespace cntr { //contr (container)
 		T &get() const; // get the value at the iterator current position
 		friend class List<T>;
 	};
-			
+
 	//-------------- Inner class iterator --------//
 	template <typename T>
 	class List<T>::iterator final: public const_iterator {
@@ -426,7 +420,7 @@ namespace cntr { //contr (container)
 
 	private:
 		iterator(Node *new_ptr); // constructor
-		friend class List<T>;			
+		friend class List<T>;
 	};
 
 	//-------------- class const_iterator implementation--------//
@@ -525,4 +519,4 @@ namespace cntr { //contr (container)
 		--(*this);
 		return temp;
 	}
-} // namespace  cntr (container)
+} // namespace  container

@@ -3,11 +3,11 @@
 int main(){
     // 1. creating a container object to store objects of type int
     // 2. adding ten elements to the container (0, 1 ... 9)
-    cntr::Forward_list<int> simple_list {0,1,2,3,4,5,6,7,8,9};
+    container::Forward_list<int> simple_list {0,1,2,3,4,5,6,7,8,9};
 
     // // 3. displaying the contents of the container on the screen
     //     // expected result: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
-    std::cout << simple_list<< std::endl;
+    std::cout << simple_list << std::endl;
 
     // 4. display the container size on the screen
         // expected result: 10
@@ -53,9 +53,6 @@ int main(){
 
     //auto new_list = std::move(simple_list);
     auto new_list = simple_list;
-    new_list.print("new_list_forward");
+    std::cout << new_list.toString("new_list_forward");
 
-
-
-    return 0;
 }

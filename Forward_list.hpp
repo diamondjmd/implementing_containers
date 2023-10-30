@@ -3,9 +3,8 @@
 #include <iostream>
 #include <stdexcept>
 #include <initializer_list>
-
-namespace cntr { //contr (container)
-
+#include <sstream>
+namespace container {
 	template <typename T>
 	class Forward_list {
 			// Node of the list
@@ -14,8 +13,6 @@ namespace cntr { //contr (container)
 					:value{T{}}, next{nullptr} {};
 				Node(const T &val, Node* next_) 
 					:value{val}, next{next_}{}
-				Node(T && value_, Node *next_ = nullptr) noexcept
-					:value{std::move(value_)}, next{next_} {}
 				
 				T value{};
 				Node *next;
@@ -27,10 +24,10 @@ namespace cntr { //contr (container)
 			Forward_list(std::initializer_list<T> init);
 			Forward_list(const Forward_list &list); //copy constructor
 			Forward_list(Forward_list && list) noexcept; // move constructor
-			virtual ~Forward_list() noexcept;
+			virtual ~Forward_list();
 			
-			Forward_list<T> &operator=(const Forward_list &list);
-			Forward_list<T> &operator=(Forward_list &&list) noexcept;
+			Forward_list<T> &operator=(const Forward_list &list);// applies copy and swap idiom
+			Forward_list<T> &operator=(Forward_list &&list) noexcept; // applies copy and swap idiom
 			
 			// Element access
 			T &operator[](const std::size_t index);
@@ -69,9 +66,10 @@ namespace cntr { //contr (container)
 			iterator erase_after(const std::size_t index);
 			void pop_front();
 			void clear();
+			void swap(Forward_list &list) noexcept;
 
 			//Operations
-			void print(const std::string & name = "") const;
+			std::string toString(const std::string & name = "") const;
 
 		private:
 			Node *head; //member
@@ -96,49 +94,47 @@ namespace cntr { //contr (container)
 
 	template <typename T>
 	Forward_list<T>::Forward_list(const Forward_list &list) :head{nullptr}{
-		*this = list;
+		push_back_items(list);	
 	}
 
 	template <typename T>
 	Forward_list<T>::Forward_list(Forward_list &&list) noexcept :head{nullptr}{
-		*this = std::move(list);
+		swap(list);
 	}
 
 	template <typename T>
-	Forward_list<T>::~Forward_list() noexcept{
+	Forward_list<T>::~Forward_list(){
 		clear();
 	}
 
 	template<typename T>
 	Forward_list<T>& Forward_list<T>::operator=(const Forward_list<T> &list) {
-		if (this == &list){
-			return *this;
+		if (this != &list){
+			auto temp(list);
+			swap(list);
 		}
-		clear();
-		push_back_items(list);
 		return *this;
 	}
 
 	template<typename T>
 	Forward_list<T>& Forward_list<T>::operator=(Forward_list<T> &&list) noexcept {
-		if (this == &list){
-			return *this;
-		}
-		clear();
-		head = list.head;
-		list.head = nullptr;
+		swap(list);
 		return *this;
 	}
 
 	//--------------- Element access ---------------//
 	template<typename T>
 	T& Forward_list<T>::operator[](const std::size_t index) {
-		return seek(index)->value;
+		auto it = seek(index);
+		if (!it) {
+			throw std::out_of_range("ERROR: Index out of bounds in forward_list");
+		}
+		return it->value;
 	}
 
 	template<typename T>
 	const T& Forward_list<T>::operator[](const std::size_t index) const {
-		return seek(index)->value;
+		return operator[](index);
 	}
 
 	// private member function
@@ -356,17 +352,24 @@ namespace cntr { //contr (container)
 		head = nullptr;
 	}
 
+	template <typename T>
+	void Forward_list<T>::swap(Forward_list &list) noexcept {
+		auto temp = head;
+		head = list.head;
+		list.head = temp;
+	}
+
 	//-----------------  Operations -----------------//
 	template<typename T>
-	void Forward_list<T>::print(const std::string & name) const{
-
-		std::cout << "\n<===== Forward List: " << name << " ======>";
+	std::string Forward_list<T>::toString(const std::string & name) const{
+		std::stringstream stream;
+		stream << "\n<===== Forward List: " << name << " ======>";
 		std::size_t index = 0;
 		for (const auto &it : *this) {
-			std::cout << "\n [" << index++ << "]=> " << it ;
-			//index++;
+			stream << "\n [" << index++ << "]=> " << it ;
 		}
-		std::cout << "\n<=== End " << name << " ====>\n";
+		stream << "\n<=== End " << name << " ====>\n";
+		return stream.str();
 	}
 
 	//---------------- Non-member functions ----------------//
@@ -487,4 +490,4 @@ namespace cntr { //contr (container)
 		++(*this);
 		return temp;
 	}
-} // namespace  cntr (container)
+} // namespace container

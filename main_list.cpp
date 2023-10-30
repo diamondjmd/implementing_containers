@@ -1,9 +1,10 @@
+#include <iostream>
 #include "List.hpp"
 
 int main(){
     // 1. creating a container object to store objects of type int
     // 2. adding ten elements to the container (0, 1 ... 9)
-    cntr::List<int> double_linked_list {0,1,2,3,4,5,6,7,8,9};
+    container::List<int> double_linked_list {0,1,2,3,4,5,6,7,8,9};
 
     // 3. displaying the contents of the container on the screen
         // expected result: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -48,7 +49,7 @@ int main(){
     }
 
     auto new_list = std::move(double_linked_list);
-    new_list.print("new_list");
+    std::cout << new_list.toString("new_list");
 
     return 0;
 }

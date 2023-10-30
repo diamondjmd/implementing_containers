@@ -2,24 +2,26 @@
 
 #include <stdexcept>
 #include <initializer_list>
-#include <iostream>
+#include <sstream>
 
-namespace cntr {
+namespace container {
 
     template<typename T> 
     class Vector {
     public:
         // Constructors and destructor
         Vector();
-        Vector(std::size_t count);
+        explicit Vector(std::size_t count);
         Vector(const Vector& other);
         Vector(Vector &&other) noexcept;
-        Vector(const std::initializer_list<T> &elements);
-        virtual ~Vector() noexcept;
+        Vector(std::initializer_list<T> elements);
+        virtual ~Vector();
         Vector<T> &operator=(const Vector &other);
         Vector<T> &operator=(Vector &&other) noexcept;
 
         // Element access
+        T &at(std::size_t index);
+        const T &at(std::size_t index) const;
         T &operator[](const std::size_t index);
         const T &operator[](const std::size_t index) const;
 
@@ -52,7 +54,7 @@ namespace cntr {
 
         
         //Operations
-        void print(const std::string &name = "") const;
+        std::string toString(const std::string &name = "") const;
 
     private:
         T *m_data; 
@@ -60,89 +62,81 @@ namespace cntr {
         std::size_t m_capacity;
 
         void move_data(T *from, T *to, std::size_t count);
-        T *check_to_insert(T *pos);
-         
+        T *check_to_insert(T *pos);   
     };
 
 //-------------- Class Vector Implementation ------------//
     //------ Constructors, destructor ----------//
     template<typename T> 
-    Vector<T>::Vector() :m_data{nullptr}, m_size{0}, m_capacity {0}{};
+    Vector<T>::Vector() :m_data{nullptr}, m_size{}, m_capacity {}{};
     
     template<typename T> 
-    Vector<T>::Vector(const Vector &other) :Vector{} { 
-        *this = other; 
+    Vector<T>::Vector(const Vector &other) :m_size{other.m_size}, m_capacity{other.m_capacity} { 
+        m_data = new T[m_size];
+        std::copy(other.m_data, other.m_data + m_size, m_data);
     }
 
     template<typename T> 
     Vector<T>::Vector(Vector &&other) noexcept :Vector{} { 
-        *this = other; 
+        *this = std::move(other); 
     }
 
     template<typename T>
     Vector<T>::Vector(std::size_t count)
-        :m_data{new T[count]}, m_size{count}, m_capacity{count}{
-
-        for (std::size_t i = 0; i < m_size; ++i){
-            m_data[i] = T();
-        }
-    }
+        :m_data{new T[count]}, m_size{count}, m_capacity{count}{}
     
     template<typename T>
-    Vector<T>::Vector(const std::initializer_list<T> &elements) 
-        :m_data{new T[elements.size()]}, m_size{elements.size()}, m_capacity{elements.size()} {
-        for (auto& element : elements){
+    Vector<T>::Vector(std::initializer_list<T> elements) :Vector(elements.size()) {
+        for (auto& element :elements){
             m_data[element] = std::move(element);
         }
     }
 
     template<typename T> 
-    Vector<T>::~Vector() noexcept {
+    Vector<T>::~Vector(){
         clear();
     }
 
+    // applying copy-and-move idiom
     template<typename T>
-    Vector<T> &Vector<T>::operator=(const Vector &other){
-        if (this == &other){
-            return *this;
-        }
-
-        clear();
-        m_data = new T[other.m_size];
-        m_size = other.m_size;
-        m_capacity = other.m_size * 2;
-        std::size_t index = 0;
-        for (; index < other.m_size; ++index){
-           m_data[index] = other.m_data[index];
-        }
-
-        for (; index < m_capacity; ++index){
-            m_data[index] = T();
+    Vector<T> &Vector<T>::operator=(const Vector &other) {
+        if (this != &other){
+            Vector temp{other};
+            *this = std::move(temp);
         }
 
         return *this;
     }
 
+    // applying copy-and-move idiom
     template<typename T>
     Vector<T> &Vector<T>::operator=(Vector &&other) noexcept {
-        if (this == &other){
-            return *this;
+        if (this != &other){
+            clear();
+            m_data = other.m_data;
+            m_size = other.m_size;
+            m_capacity = other.m_size;
+
+            other.m_data = nullptr;
+            other.m_size = 0;
+            other.m_capacity = 0;
         }
-
-        clear();
-        m_data = new T[other.m_capacity];
-        m_size = other.m_size;
-        m_capacity = other.m_size;
-
-        for (std::size_t index= 0; index < other.m_size; ++index){
-           m_data[index] = std::move(other.m_data[index]);
-        }
-
-        other.clear();
-
         return *this;
     }
-    //--------------- Element access ---------------//  
+    //--------------- Element access ---------------//
+    template<typename T>
+    T &Vector<T>::at(std::size_t index){
+        if (index >= m_size){
+		    throw std::out_of_range("ERROR: Index out of bounds in Vector");
+        }
+        return m_data[index];
+    }
+
+    template<typename T>
+    const T &Vector<T>::at(std::size_t index) const {
+        return at(index);
+    }
+    
     template<typename T>
     T &Vector<T>::operator[](const std::size_t index){
         return m_data[index];
@@ -189,17 +183,13 @@ namespace cntr {
     //-----------------  Capacity ------------------//
     template<typename T>
     void Vector<T>::reserve(std::size_t new_cap){
-        if (new_cap <= m_capacity){
-            return;
+        if (new_cap > m_capacity){
+            Vector temp(new_cap);
+            for (std::size_t i; i < m_size; ++i){
+                temp[i] = std::move(m_data[i]);
+            }
+            *this = std::move(temp);
         }
-
-        T *temp = new T[new_cap];
-        for (std::size_t i = 0; i < m_size; ++i){
-            temp[i] = m_data[i];
-        }
-        delete [] m_data;
-        m_data = temp;
-        m_capacity = new_cap;
     }
 
     template<typename T>
@@ -319,14 +309,16 @@ namespace cntr {
 
     //------------------- Operations -----------------------//
     template<typename T>
-	void Vector<T>::print(const std::string &name) const {
-        std::cout << "\n<===== Vector: " << name << " ======>\n >>Size:" << m_size;
+	std::string Vector<T>::toString(const std::string &name) const {
+        std::stringstream stream;
+        stream << "\n<===== Vector: " << name << " ======>\n >>Size:" << m_size;
 		std::size_t index = 0;
 		for (const auto &it : *this) {
-			std::cout << "\n [" << index << "]=> " << it ;
+			stream << "\n [" << index << "]=> " << it ;
 			index++;
 		}
-			std::cout << "\n<=== End " << name << " ====>\n";
+		stream << "\n<=== End " << name << " ====>\n";
+        return stream.str();
 	}
 	//---------------- Non-member functions ----------------//
 	template<typename T>
@@ -493,4 +485,4 @@ namespace cntr {
 
 
 
-} // namespace cntr
+} // namespace container
