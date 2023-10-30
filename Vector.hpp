@@ -6,18 +6,18 @@
 
 namespace container {
 
-    template<typename T> 
+    template<typename T>
     class Vector {
     public:
         // Constructors and destructor
         Vector();
         explicit Vector(std::size_t count);
-        Vector(const Vector& other);
-        Vector(Vector &&other) noexcept;
+        Vector(const Vector& other); // copy constructor
+        Vector(Vector &&other) noexcept; //move constructor
         Vector(std::initializer_list<T> elements);
         virtual ~Vector();
-        Vector<T> &operator=(const Vector &other);
-        Vector<T> &operator=(Vector &&other) noexcept;
+        Vector<T> &operator=(const Vector &other); // applies copy and swap idiom
+        Vector<T> &operator=(Vector &&other) noexcept; // applies copy and swap idiom
 
         // Element access
         T &at(std::size_t index);
@@ -28,7 +28,7 @@ namespace container {
         // Inner classes
         class const_iterator;
         class iterator;
-  
+
         // Iterators
         iterator begin() noexcept;
         const_iterator begin() const noexcept;
@@ -42,7 +42,7 @@ namespace container {
         std::size_t size() const;
 
 
-        // Modifiers 
+        // Modifiers
         iterator insert(const_iterator pos, const T &value);
         iterator insert(const_iterator pos, T &&value) noexcept;
         iterator insert(std::size_t pos, const T &value);
@@ -51,75 +51,69 @@ namespace container {
         iterator erase(const_iterator pos);
         iterator erase(const std::size_t pos);
         void push_back(const T &value);
+        void swap(Vector &vector) noexcept;
 
-        
+
         //Operations
         std::string toString(const std::string &name = "") const;
 
     private:
-        T *m_data; 
+        T *m_data;
         std::size_t m_size;
         std::size_t m_capacity;
 
         void move_data(T *from, T *to, std::size_t count);
-        T *check_to_insert(T *pos);   
+        T *check_to_insert(T *pos);
     };
 
 //-------------- Class Vector Implementation ------------//
     //------ Constructors, destructor ----------//
-    template<typename T> 
+    template<typename T>
     Vector<T>::Vector() :m_data{nullptr}, m_size{}, m_capacity {}{};
-    
-    template<typename T> 
-    Vector<T>::Vector(const Vector &other) :m_size{other.m_size}, m_capacity{other.m_capacity} { 
+
+    template<typename T>
+    Vector<T>::Vector(const Vector &other) :m_size{other.m_size}, m_capacity{other.m_capacity} {
         m_data = new T[m_size];
         std::copy(other.m_data, other.m_data + m_size, m_data);
     }
 
-    template<typename T> 
-    Vector<T>::Vector(Vector &&other) noexcept :Vector{} { 
-        *this = std::move(other); 
+    template<typename T>
+    Vector<T>::Vector(Vector &&other) noexcept :Vector{} {
+        swap(other);
     }
 
     template<typename T>
     Vector<T>::Vector(std::size_t count)
         :m_data{new T[count]}, m_size{count}, m_capacity{count}{}
-    
+
     template<typename T>
     Vector<T>::Vector(std::initializer_list<T> elements) :Vector(elements.size()) {
+        std::size_t i = 0;
         for (auto& element :elements){
-            m_data[element] = std::move(element);
+            m_data[i++] = std::move(element);
         }
     }
 
-    template<typename T> 
+    template<typename T>
     Vector<T>::~Vector(){
         clear();
     }
 
-    // applying copy-and-move idiom
+    // applying copy-and-swap idiom
     template<typename T>
     Vector<T> &Vector<T>::operator=(const Vector &other) {
         if (this != &other){
             Vector temp{other};
-            *this = std::move(temp);
+            swap(temp);
         }
-
         return *this;
     }
 
-    // applying copy-and-move idiom
+    // applying copy-and-swap idiom
     template<typename T>
     Vector<T> &Vector<T>::operator=(Vector &&other) noexcept {
         if (this != &other){
-            clear();
-            m_data = other.m_data;
-            m_size = other.m_size;
-            m_capacity = other.m_size;
-
-            other.m_data = nullptr;
-            other.m_size = 0;
-            other.m_capacity = 0;
+            swap(other);
         }
         return *this;
     }
@@ -136,7 +130,7 @@ namespace container {
     const T &Vector<T>::at(std::size_t index) const {
         return at(index);
     }
-    
+
     template<typename T>
     T &Vector<T>::operator[](const std::size_t index){
         return m_data[index];
@@ -149,33 +143,33 @@ namespace container {
 
     //-----------------  Iterators -----------------//
 	template<typename T>
-	typename Vector<T>::iterator Vector<T>::begin() noexcept { 
-		return iterator(m_data); 
+	typename Vector<T>::iterator Vector<T>::begin() noexcept {
+		return iterator(m_data);
 	}
 
     template<typename T>
-	typename Vector<T>::const_iterator Vector<T>::begin() const noexcept{ 
-		return cbegin(); 
+	typename Vector<T>::const_iterator Vector<T>::begin() const noexcept{
+		return cbegin();
 	}
 
     template<typename T>
-	typename Vector<T>::const_iterator Vector<T>::cbegin() const noexcept{ 
-		return const_iterator(m_data); 
+	typename Vector<T>::const_iterator Vector<T>::cbegin() const noexcept{
+		return const_iterator(m_data);
 	}
 
     template<typename T>
-	typename Vector<T>::iterator Vector<T>::end() noexcept { 
-		return iterator(&m_data[m_size]); 
+	typename Vector<T>::iterator Vector<T>::end() noexcept {
+		return iterator(&m_data[m_size]);
 	}
 
     template<typename T>
-	typename Vector<T>::const_iterator Vector<T>::end() const noexcept { 
-		return cend(); 
+	typename Vector<T>::const_iterator Vector<T>::end() const noexcept {
+		return cend();
 	}
 
     template<typename T>
-	typename Vector<T>::const_iterator Vector<T>::cend() const noexcept{ 
-		return const_iterator(&m_data[m_size]); 
+	typename Vector<T>::const_iterator Vector<T>::cend() const noexcept{
+		return const_iterator(&m_data[m_size]);
 	}
 
 
@@ -200,7 +194,7 @@ namespace container {
     //private function
     template<typename T>
     void Vector<T>::move_data(T *from, T *to, std::size_t count){
-        if (from < to){ // for insert operations 
+        if (from < to){ // for insert operations
             T *_from = from + count - 1, *_to = to + count - 1;
             for (std::size_t i = count; i > 0; --i){
                 *_to-- = std::move(*_from--);
@@ -218,7 +212,7 @@ namespace container {
     }
 
     //-----------------  Modifiers -----------------//
-    template<typename T> 
+    template<typename T>
     void Vector<T>::clear() noexcept {
         if (m_data){
             delete[] m_data;
@@ -229,7 +223,7 @@ namespace container {
     }
 
     // private function member
-    template<typename T> 
+    template<typename T>
     T *Vector<T>::check_to_insert(T *pos){
         auto pos_to_check = pos;
         if (pos_to_check < m_data || pos_to_check > &m_data[m_size] ){
@@ -249,17 +243,17 @@ namespace container {
     typename Vector<T>::iterator Vector<T>::insert(const_iterator pos, const T &value){
         auto to_insert = check_to_insert(pos.m_current);
         if (to_insert != nullptr){
-            *to_insert = value; 
+            *to_insert = value;
             ++m_size;
         }
         return iterator{to_insert};
     }
-    
+
     template<typename T>
     typename Vector<T>::iterator Vector<T>::insert(const_iterator pos, T &&value) noexcept {
         auto to_insert = check_to_insert(pos.m_current);
         if (to_insert != nullptr){
-            *to_insert = std::move(value); 
+            *to_insert = std::move(value);
             ++m_size;
         }
         return iterator{to_insert};
@@ -293,7 +287,7 @@ namespace container {
         if (pos < m_size){
             return erase(const_iterator(m_data + pos));
         }
-        return iterator{};  
+        return iterator{};
     }
 
     template<typename T>
@@ -305,6 +299,21 @@ namespace container {
         }
 
         m_data[m_size++] = value;
+    }
+
+    template <typename T>
+    void Vector<T>::swap(Vector &vector) noexcept{
+       auto tmp_data = m_data;
+       auto tmp_capacity = m_capacity;
+       auto tmp_size = m_size;
+
+       m_data = vector.m_data;
+       m_size = vector.m_size;
+       m_capacity = vector.m_size;
+       
+       vector.m_data = tmp_data;
+       vector.m_size = tmp_capacity;
+       vector.m_size = tmp_size;
     }
 
     //------------------- Operations -----------------------//
@@ -329,13 +338,13 @@ namespace container {
         for (std::size_t i = 0 ; i < vector.size(); ++i) {
 			os << vector[i] << ", ";
 		}
-	
+
         os << "END";
             return os;
 	}
 
 	//-------------- Inner class const_iterator --------//
-    template<class T> 
+    template<class T>
     class Vector<T>::const_iterator {
     public:
         const_iterator();
@@ -375,13 +384,13 @@ namespace container {
 
 	private:
 		iterator(T *new_ptr); // constructor
-		friend class Vector<T>;			
+		friend class Vector<T>;
 	};
 
     //-------------- class const_iterator implementation--------//
     template<typename T>
     Vector<T>::const_iterator::const_iterator() :m_current{nullptr} {}
-    
+
     //protected constructor
 	template <typename T>
 	Vector<T>::const_iterator::const_iterator(T *new_ptr) :m_current{new_ptr} {}
@@ -396,7 +405,7 @@ namespace container {
     typename Vector<T>::const_iterator Vector<T>::const_iterator::operator++(int){
         const_iterator temp = m_current;
         ++m_current;
-        return temp;   
+        return temp;
     }
 
     template<typename T>
@@ -409,7 +418,7 @@ namespace container {
     typename Vector<T>::const_iterator Vector<T>::const_iterator::operator--(int){
         const_iterator temp = m_current;
         --m_current;
-        return temp;   
+        return temp;
     }
 
     template<typename T>
@@ -440,7 +449,7 @@ namespace container {
     //-------------- class iterator implementation--------//
     template<typename T>
     Vector<T>::iterator::iterator() :const_iterator{}{}
-    
+
     //protected constructor
 	template <typename T>
 	Vector<T>::iterator::iterator(T *new_ptr) :const_iterator{new_ptr} {}
@@ -455,7 +464,7 @@ namespace container {
     typename Vector<T>::iterator Vector<T>::iterator::operator++(int){
         iterator temp = this->m_current;
          ++(this->m_current);
-        return temp;   
+        return temp;
     }
 
     template<typename T>
@@ -468,7 +477,7 @@ namespace container {
     typename Vector<T>::iterator Vector<T>::iterator::operator--(int){
         iterator temp = this->m_current;
         --(this->m_current);
-        return temp;   
+        return temp;
     }
 
 	template <typename T>

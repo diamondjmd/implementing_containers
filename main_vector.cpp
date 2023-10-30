@@ -50,7 +50,7 @@ int main(){
     for (auto iter = vec.begin(); iter != vec.end(); ++iter) {
         std::cout << *iter << std::endl;
     }
-    
+
     auto vec2 = std::move(vec);
     std::cout << vec2.toString("vec2");
 
