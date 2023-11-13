@@ -58,9 +58,9 @@ namespace container {
         std::string toString(const std::string &name = "") const;
 
     private:
-        T *m_data;
         std::size_t m_size;
         std::size_t m_capacity;
+        T *m_data;
 
         void move_data(T *from, T *to, std::size_t count);
         T *check_to_insert(T *pos);
@@ -69,7 +69,7 @@ namespace container {
 //-------------- Class Vector Implementation ------------//
     //------ Constructors, destructor ----------//
     template<typename T>
-    Vector<T>::Vector() :m_data{nullptr}, m_size{}, m_capacity {}{};
+    Vector<T>::Vector() :m_size{}, m_capacity{}, m_data{nullptr} {};
 
     template<typename T>
     Vector<T>::Vector(const Vector &other) :m_size{other.m_size}, m_capacity{other.m_capacity} {
@@ -84,13 +84,13 @@ namespace container {
 
     template<typename T>
     Vector<T>::Vector(std::size_t count)
-        :m_data{new T[count]}, m_size{count}, m_capacity{count}{}
+        :m_size{count}, m_capacity{count}, m_data{new T[count]} {}
 
     template<typename T>
     Vector<T>::Vector(std::initializer_list<T> elements) :Vector(elements.size()) {
         std::size_t i = 0;
         for (auto& element :elements){
-            m_data[i++] = std::move(element);
+            m_data[i++] = element;
         }
     }
 
@@ -180,9 +180,9 @@ namespace container {
         if (new_cap > m_capacity){
             Vector temp(new_cap);
             for (std::size_t i; i < m_size; ++i){
-                temp[i] = std::move(m_data[i]);
+                temp[i] = m_data[i];
             }
-            *this = std::move(temp);
+            swap(temp);
         }
     }
 
@@ -303,17 +303,20 @@ namespace container {
 
     template <typename T>
     void Vector<T>::swap(Vector &vector) noexcept{
-       auto tmp_data = m_data;
-       auto tmp_capacity = m_capacity;
-       auto tmp_size = m_size;
+    //    auto tmp_data = m_data;
+    //    auto tmp_capacity = m_capacity;
+    //    auto tmp_size = m_size;
 
-       m_data = vector.m_data;
-       m_size = vector.m_size;
-       m_capacity = vector.m_size;
+    //    m_data = vector.m_data;
+    //    m_size = vector.m_size;
+    //    m_capacity = vector.m_size;
        
-       vector.m_data = tmp_data;
-       vector.m_size = tmp_capacity;
-       vector.m_size = tmp_size;
+    //    vector.m_data = tmp_data;
+    //    vector.m_size = tmp_capacity;
+    //    vector.m_size = tmp_size;
+    std::swap(this->m_size, vector.m_size);
+    std::swap(this->m_capacity, vector.m_capacity);
+    std::swap(this->m_data, vector.m_data);
     }
 
     //------------------- Operations -----------------------//

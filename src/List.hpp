@@ -10,8 +10,6 @@ namespace container {
 	class List {
 			// Node of the list
 			struct Node{
-				Node()
-					:value{T{}}, next{nullptr}, prev{nullptr} {};
 				Node(const T &val, Node* next_ , Node* prev_)
 					:value{val}, next{next_}, prev{prev_} {}
 
@@ -75,9 +73,9 @@ namespace container {
 			std::string toString(const std::string &name = "") const;
 
 	private:
+			std::size_t m_size{};
 			Node *head;
 			Node *tail;
-			std::size_t m_size{};
 
 			// helper
 			Node *seek(const std::size_t index);
@@ -86,7 +84,7 @@ namespace container {
 //-------------- Class List Implementation --------------//
 	// Constructors, destructor assign operator //
 	template <typename T>
-	List<T>::List() :head{new Node{}}, tail{head}, m_size{} {}
+	List<T>::List() :m_size{}, head{new Node{T{}, nullptr, nullptr}}, tail{head} {}
 
 	template <typename T>
 	List<T>::List(const List<T> &list) :List{} {
