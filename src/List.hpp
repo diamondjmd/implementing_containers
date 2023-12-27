@@ -27,7 +27,6 @@ namespace container {
 			List(const std::initializer_list<T> &elements); //initializer list constructor
 			virtual ~List();
 
-			// List<T> &operator=(const List &list);
 			List<T> &operator=(const List &list); // implements copy swap idiom
 			List<T> &operator=(List &&list) noexcept;
 
@@ -71,6 +70,9 @@ namespace container {
 			//Operations
 			void reverse();
 			std::string toString(const std::string &name = "") const;
+
+			bool operator==(const List &other) const;
+			bool operator!=(const List &other) const;
 
 	private:
 			std::size_t m_size{};
@@ -368,6 +370,25 @@ namespace container {
 		stream << "\n<=== End " << name << " ====>\n";
 		return stream.str();
 	}
+
+	template<typename T>
+    bool List<T>::operator==(const List& other) const{
+		auto itOther = other.cbegin();
+		auto it = cbegin();
+		
+		for (; it != cend() || itOther != other.cend(); ++it, ++itOther) {
+			if(*it != *itOther){
+				return false;
+			}
+		}
+
+		return *it == *itOther;
+    }
+
+    template<typename T>
+    bool List<T>::operator!=(const List& other) const{
+        return !(operator==(other));
+    }
 
 	//---------------- Non-member functions ----------------//
 	template<typename T>

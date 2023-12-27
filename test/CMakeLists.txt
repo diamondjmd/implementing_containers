@@ -1,7 +1,7 @@
 # Add the path to your custom libraries
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
-file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+file(GLOB SRC_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 
 foreach(src_file ${SRC_FILES})
@@ -9,7 +9,7 @@ foreach(src_file ${SRC_FILES})
     add_executable(${target} ${src_file})
     list(APPEND TARGETS ${target})
     message("target added: ${target}")
-endforeach(src_file ${SRC_FILES})
+endforeach()
 
 
 foreach(target ${TARGETS})
@@ -30,4 +30,4 @@ foreach(target ${TARGETS})
         )
     endif()
     target_compile_features(${target} PUBLIC cxx_std_17)
-endforeach(target IN ${TARGETS})
+endforeach()

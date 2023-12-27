@@ -5,7 +5,6 @@
 #include <sstream>
 
 namespace container {
-
     template<typename T>
     class Vector {
     public:
@@ -18,7 +17,6 @@ namespace container {
         virtual ~Vector();
         Vector<T> &operator=(const Vector &other); // applies copy and swap idiom
         Vector<T> &operator=(Vector &&other) noexcept; // applies copy and swap idiom
-
         // Element access
         T &at(std::size_t index);
         const T &at(std::size_t index) const;
@@ -38,6 +36,7 @@ namespace container {
         const_iterator cend() const noexcept;
 
         // Capacity
+        bool empty() const noexcept;
         void reserve(std::size_t new_cap);
         std::size_t size() const;
 
@@ -51,19 +50,23 @@ namespace container {
         iterator erase(const_iterator pos);
         iterator erase(const std::size_t pos);
         void push_back(const T &value);
+        void push_back( T&& value );
         void swap(Vector &vector) noexcept;
 
 
         //Operations
-        std::string toString(const std::string &name = "") const;
+        std::string toString(const std::string &name = "") const;  
+        bool operator==(const Vector& other) const;
+        bool operator!=(const Vector& other) const;
+    private:    
+        void move_data(T *from, T *to, std::size_t count);
+        T *check_to_insert(T *pos);
+        void push_back_checker();
 
-    private:
+    private: // members
         std::size_t m_size;
         std::size_t m_capacity;
         T *m_data;
-
-        void move_data(T *from, T *to, std::size_t count);
-        T *check_to_insert(T *pos);
     };
 
 //-------------- Class Vector Implementation ------------//
@@ -176,6 +179,11 @@ namespace container {
 
     //-----------------  Capacity ------------------//
     template<typename T>
+    bool Vector<T>::empty() const noexcept{
+        return size() == 0;
+    }
+
+    template<typename T>
     void Vector<T>::reserve(std::size_t new_cap){
         if (new_cap > m_capacity){
             Vector temp(new_cap);
@@ -185,6 +193,7 @@ namespace container {
             swap(temp);
         }
     }
+
 
     template<typename T>
     std::size_t Vector<T>::size() const{
@@ -292,31 +301,30 @@ namespace container {
 
     template<typename T>
     void Vector<T>::push_back(const T &value){
+        push_back_checker();
+        m_data[m_size++] = value;
+    }
+
+    template<typename T>
+    void Vector<T>::push_back(T &&value){
+        push_back_checker();
+        m_data[m_size++] =  std::move(value);
+    }
+
+    template<typename T>
+    void Vector<T>::push_back_checker() {
         if (!m_capacity){
             reserve(5);
-        }else if (m_capacity < m_size){
+        } else if (m_capacity < m_size){
             reserve(2 * m_capacity);
         }
-
-        m_data[m_size++] = value;
     }
 
     template <typename T>
     void Vector<T>::swap(Vector &vector) noexcept{
-    //    auto tmp_data = m_data;
-    //    auto tmp_capacity = m_capacity;
-    //    auto tmp_size = m_size;
-
-    //    m_data = vector.m_data;
-    //    m_size = vector.m_size;
-    //    m_capacity = vector.m_size;
-       
-    //    vector.m_data = tmp_data;
-    //    vector.m_size = tmp_capacity;
-    //    vector.m_size = tmp_size;
-    std::swap(this->m_size, vector.m_size);
-    std::swap(this->m_capacity, vector.m_capacity);
-    std::swap(this->m_data, vector.m_data);
+        std::swap(this->m_size, vector.m_size);
+        std::swap(this->m_capacity, vector.m_capacity);
+        std::swap(this->m_data, vector.m_data);
     }
 
     //------------------- Operations -----------------------//
@@ -332,6 +340,21 @@ namespace container {
 		stream << "\n<=== End " << name << " ====>\n";
         return stream.str();
 	}
+
+    template<typename T>
+    bool Vector<T>::operator==(const Vector<T>& other) const{
+        if (m_size != other.size()){
+            return false;
+        }
+        return std::equal(m_data, m_data + m_size, other.m_data);
+    }
+
+    template<typename T>
+    bool Vector<T>::operator!=(const Vector<T>& other) const{
+        return !(operator==(other));
+    }
+
+
 	//---------------- Non-member functions ----------------//
 	template<typename T>
 	std::ostream& operator<<(std::ostream& os, const Vector<T> & vector) {
@@ -492,9 +515,5 @@ namespace container {
 	T &Vector<T>::iterator::operator*() {
 		return const_iterator::get();
 	}
-
-
-
-
 
 } // namespace container
